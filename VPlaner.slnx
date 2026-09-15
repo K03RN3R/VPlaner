@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="VPlaner.Core/VPlaner.Core.csproj" Id="98384985-06c0-456f-b4c3-54645ea3566c" />
+  <Project Path="VPlaner.Infrastructure/VPlaner.Infrastructure.csproj" Id="261782a8-3735-4152-aebb-999f94b4ac58" />
+  <Project Path="VPlaner/VPlaner.csproj" />
+</Solution>
