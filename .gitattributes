@@ -61,3 +61,7 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+# Fremdcode aus der Vorlage nicht als eigene Sprache zaehlen
+wwwroot/css/bootstrap/** linguist-vendored
+wwwroot/lib/** linguist-vendored
