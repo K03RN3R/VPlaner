@@ -14,7 +14,12 @@ namespace VPlaner.Core.Models
 
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
-        //Navigation Properties: alle Personen, die zu dieser Abteilung gehören
-        public ICollection<Person> Persons { get; set; } = new List<Person>();
+        /// <summary>Personen, die Mitglied in dieser Abteilung sind (M:N).</summary>
+        public ICollection<PersonDepartment> PersonDepartments { get; set; }
+            = new List<PersonDepartment>();
+
+        /// <summary>Termine, die diese Abteilung betreffen (M:N aus Auftritt-Spalte).</summary>
+        public ICollection<EventDepartment> EventDepartments { get; set; }
+            = new List<EventDepartment>();
     }
 }

@@ -1,10 +1,17 @@
 using VPlaner.Components;
+using VPlaner.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// DbContext mit SQLite registrieren
+var connectionString = builder.Configuration.GetConnectionString("Default") 
+                       ?? "Data Source=vplaner.db";
+builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString));
 
 var app = builder.Build();
 
@@ -24,4 +31,5 @@ app.MapStaticAssets();
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
+await DataSeeder.SeedAsync(app.Services);
 app.Run();

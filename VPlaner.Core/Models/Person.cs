@@ -9,22 +9,21 @@ namespace VPlaner.Core.Models
     {
         public int Id { get; set; }
 
-        //Fremdschlüssel und Navigation zur Abteilung
-        public int DepartmentId { get; set; }
-        public Department Department { get; set; } = null!;
-
         [Required, MaxLength(20)]
-        public string Vorname { get; set; } = string.Empty;
-
-        [Required, MaxLength(1)]
-        public string Nachname { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// Soft-Delete-Flag. wenn eine Person austritt ist sie in der
         /// Veranstaltungshistorie noch vorhanden, aber nicht mehr aktiv.
+        /// Dadurch keine Lücken in der Historie, aber die Person wird nicht mehr angezeigt.
         /// </summary>
         public bool IsActive { get; set; } = true;
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// Abteilunge, in denen diese Person Mitglied ist (M:N)
+        /// </summary>
+        public ICollection<PersonDepartment> PersonDepartments { get; set; } = new List<PersonDepartment>();
     }
 }

@@ -36,3 +36,156 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+/* === VPlaner — Vereinsfarben === */
+:root {
+    --vp-black: #0d0d0d;
+    --vp-black-soft: #1a1a1a;
+    --vp-red: #c8102e;
+    --vp-red-dark: #9a0c23;
+    --vp-gold: #d4af37;
+    --vp-gold-soft: #e8c875;
+    --vp-text: #1a1a1a;
+    --vp-bg: #f8f8f8;
+    --vp-surface: #ffffff;
+    --vp-border: #e0e0e0;
+}
+
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: var(--vp-text);
+    background: var(--vp-bg);
+}
+
+/* === Layout === */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.app-sidebar {
+    width: 220px;
+    background: var(--vp-black);
+    color: #e5e5e5;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5rem 0;
+}
+
+.app-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0 1.5rem 1.5rem 1.5rem;
+    border-bottom: 2px solid var(--vp-gold);
+    margin-bottom: 1rem;
+}
+
+.brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    background: var(--vp-red);
+    color: #fff;
+    font-weight: bold;
+    border-radius: 4px;
+    font-size: 1.3rem;
+}
+
+.brand-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+}
+
+.app-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0 0.6rem;
+}
+
+    .app-nav .nav-link {
+        display: block;
+        padding: 0.6rem 0.9rem;
+        color: #d0d0d0;
+        text-decoration: none;
+        border-radius: 4px;
+        font-size: 0.95rem;
+        transition: background 0.12s, color 0.12s;
+    }
+
+        .app-nav .nav-link:hover {
+            background: var(--vp-black-soft);
+            color: #fff;
+        }
+
+        .app-nav .nav-link.active {
+            background: var(--vp-red);
+            color: #fff;
+        }
+
+.app-main {
+    flex: 1;
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+/* === Grundlegende Form- und Button-Styles === */
+input[type="text"],
+input:not([type]) {
+    padding: 0.5rem 0.7rem;
+    border: 1px solid var(--vp-border);
+    border-radius: 4px;
+    font-size: 0.95rem;
+    background: #fff;
+}
+
+input:focus {
+    outline: 2px solid var(--vp-red);
+    outline-offset: -1px;
+}
+
+button {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--vp-border);
+    border-radius: 4px;
+    background: var(--vp-surface);
+    color: var(--vp-text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    margin-right: 0.3rem;
+    transition: background 0.12s;
+}
+
+    button:hover:not(:disabled) {
+        background: #f0f0f0;
+    }
+
+    button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+/* === Tabellen === */
+table {
+    background: var(--vp-surface);
+    border: 1px solid var(--vp-border);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+    table thead tr {
+        background: var(--vp-black) !important;
+        color: var(--vp-gold);
+    }
+
+    table thead th {
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid var(--vp-gold) !important;
+    }
