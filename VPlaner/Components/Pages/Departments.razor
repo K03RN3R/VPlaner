@@ -1,8 +1,7 @@
 ﻿@page "/departments"
 @using VPlaner.Core.Models
-@using VPlaner.Infrastructure.Data
-@using Microsoft.EntityFrameworkCore
-@inject AppDbContext Db
+@using VPlaner.Infrastructure.Services
+@inject DepartmentService DeptSvc
 
 <PageTitle>Abteilungen</PageTitle>
 
@@ -90,11 +89,9 @@ else
     private List<Department>? _departments;
     private string _newName = string.Empty;
 
-    // State für Inline-Edit
     private int _editingId;
     private string _editName = string.Empty;
 
-    // Feedback für den User
     private string _message = string.Empty;
     private string _error = string.Empty;
 
@@ -105,9 +102,7 @@ else
 
     private async Task ReloadAsync()
     {
-        _departments = await Db.Departments
-            .OrderBy(d => d.Name)
-            .ToListAsync();
+        _departments = await DeptSvc.GetAllAsync();
     }
 
     private async Task CreateAsync()
@@ -115,21 +110,16 @@ else
         _message = string.Empty;
         _error = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(_newName))
-            return;
-
         try
         {
-            Db.Departments.Add(new Department { Name = _newName.Trim() });
-            await Db.SaveChangesAsync();
-
-            _message = $"Abteilung '{_newName.Trim()}' angelegt.";
+            var dept = await DeptSvc.CreateAsync(_newName);
+            _message = $"Abteilung '{dept.Name}' angelegt.";
             _newName = string.Empty;
             await ReloadAsync();
         }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        catch (DepartmentServiceException ex)
         {
-            _error = $"Eine Abteilung mit dem Namen '{_newName.Trim()}' existiert bereits.";
+            _error = ex.Message;
         }
     }
 
@@ -158,28 +148,16 @@ else
         _message = string.Empty;
         _error = string.Empty;
 
-        var dept = await Db.Departments.FindAsync(id);
-        if (dept == null) return;
-
-        var newName = _editName.Trim();
-        if (string.IsNullOrWhiteSpace(newName))
-        {
-            _error = "Name darf nicht leer sein.";
-            return;
-        }
-
         try
         {
-            dept.Name = newName;
-            await Db.SaveChangesAsync();
-
+            await DeptSvc.RenameAsync(id, _editName);
             _message = "Abteilung umbenannt.";
             _editingId = 0;
             await ReloadAsync();
         }
-        catch (DbUpdateException ex) when (IsUniqueConstraintViolation(ex))
+        catch (DepartmentServiceException ex)
         {
-            _error = $"Eine Abteilung mit dem Namen '{newName}' existiert bereits.";
+            _error = ex.Message;
         }
     }
 
@@ -188,29 +166,15 @@ else
         _message = string.Empty;
         _error = string.Empty;
 
-        var dept = await Db.Departments.FindAsync(id);
-        if (dept == null) return;
-
         try
         {
-            Db.Departments.Remove(dept);
-            await Db.SaveChangesAsync();
-
-            _message = $"Abteilung '{dept.Name}' gelöscht.";
+            await DeptSvc.DeleteAsync(id);
+            _message = "Abteilung gelöscht.";
             await ReloadAsync();
         }
-        catch (DbUpdateException)
+        catch (DepartmentServiceException ex)
         {
-            _error = $"'{dept.Name}' kann nicht gelöscht werden — es sind noch Personen oder Termine damit verknüpft.";
-            // EF-Tracker zurücksetzen, damit der nächste Versuch sauber ist
-            Db.ChangeTracker.Clear();
-            await ReloadAsync();
+            _error = ex.Message;
         }
-    }
-
-    private static bool IsUniqueConstraintViolation(DbUpdateException ex)
-    {
-        // SQLite liefert bei UNIQUE-Verletzung einen SqliteException mit SqliteErrorCode 19
-        return ex.InnerException?.Message.Contains("UNIQUE", StringComparison.OrdinalIgnoreCase) == true;
     }
 }

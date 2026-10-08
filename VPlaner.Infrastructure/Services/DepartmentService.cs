@@ -13,11 +13,11 @@ namespace VPlaner.Infrastructure.Services
 /// Validierung sowie Fehler-Übersetzung.
 /// </summary>
 {
-    public class DepartmentServices
+    public class DepartmentService
     {
         private readonly AppDbContext _db;
 
-        public DepartmentServices(AppDbContext db) => _db = db;
+        public DepartmentService(AppDbContext db) => _db = db;
         
         ///<summary>Alle Abteilungen aufsteigend nach ID sortiert</summary>
         public Task <List<Department>> GetAllAsync()
