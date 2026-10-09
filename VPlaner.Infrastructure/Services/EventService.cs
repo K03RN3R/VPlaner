@@ -22,7 +22,7 @@ namespace VPlaner.Infrastructure.Services
         /// </summary>
         /// <param name="=departmentId">Wenn gesetzt: nur Termine, die diese Abteilung betreffen</param>
         /// <param name="=includeCompleted">Wenn false: nur Termine, die noch nicht vorbei sind</param>
-        public Task<List<EventItem>> GetAllAsync(int? departmentId = null, bool includeCompleted = false)
+        public async Task<List<EventItem>> GetAllAsync(int? departmentId = null, bool includeCompleted = false)
         {
             var q = _db.Events
                        .Include(e => e.EventDepartments)
@@ -43,10 +43,12 @@ namespace VPlaner.Infrastructure.Services
             }
 
             //Sortierung: Termine mit Datum zuerst nach Datum, dann die ohne Datum
-            return q.OrderBy(e => e.Date == null)
+            var list = await q.ToListAsync();
+            
+            return list.OrderBy(e => e.Date == null)
                     .ThenBy(e => e.Date)
-                    .ThenBy(e => e.Time)
-                    .ToListAsync();
+                    .ThenBy(e => e.Time ?? TimeSpan.Zero)
+                    .ToList();
         }
         public Task<EventItem?> GetAsync(int id) => _db.Events
                                                        .Include(e => e.EventDepartments)

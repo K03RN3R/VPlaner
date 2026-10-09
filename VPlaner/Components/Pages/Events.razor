@@ -34,7 +34,7 @@
     }
 else if (_events.Count == 0)
     {
-        <p>Leione Termine gefunden für aktuellen Filter</p>
+        <p>Keine Termine gefunden für aktuellen Filter</p>
     }
 else
     {
@@ -109,5 +109,5 @@ else
             _events = await EventSvc.GetAllAsync(deptFilter, _includeCompleted);
         }
 
-        private static string FormatTime(TimeSpan? t) => t.HasValue ? t.Value.ToString(@"\hh:mm") : "-";
+    private static string FormatTime(TimeSpan? t) => t.HasValue ? t.Value.ToString(@"hh\:mm") : "-";
 }
