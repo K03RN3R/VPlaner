@@ -1,0 +1,113 @@
+﻿@page "/events"
+@using VPlaner.Core.Models
+@using VPlaner.Infrastructure.Services
+@inject EventService EventSvc
+@inject DepartmentService DeptSvc
+
+
+<PageTitle>Termine</PageTitle>
+
+<h1>Termine</h1>
+
+<!-- Filter-Leiste -->
+<div style="margin: 1rem 0; display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+    <label>
+        <strong>Abteilung:</strong>
+        <select @bind="_selectedDeptId"@bind:after="ReloadAsync" style="padding: 0.4rem; margin-left: 0.4rem;">
+            <option value="0">- alle -</option>
+            @foreach (var d in _departments)
+            {
+                    <option value="@d.Id">@d.Name</option>
+            }
+        </select>
+    </label>
+
+    <label>
+        <input type="checkbox" @bind="_includeCompleted" @bind:after="ReloadAsync" />
+        Vergangene Termine anzeigen
+    </label>
+</div>
+
+@if (_events == null)
+    {
+        <p>Lade Daten...</p>
+    }
+else if (_events.Count == 0)
+    {
+        <p>Leione Termine gefunden für aktuellen Filter</p>
+    }
+else
+    {
+        <table style="width: 100%; max-width: 1100px; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="text-align: left; padding: 0.4rem;">Datum</th>
+                    <th style="text-align: left; padding: 0.4rem;">Uhrzeit</th>
+                    <th style="text-align: left; padding: 0.4rem;">Veranstaltung</th>
+                    <th style="text-align: left; padding: 0.4rem;">Ort</th>
+                    <th style="text-align: left; padding: 0.4rem;">Abteilungen</th>
+                    <th style="text-align: left; padding: 0.4rem;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in _events)
+                {
+                    <tr style="border-bottom: 1px solid #eee; @(e.IsCompleted ? "opacity: 0.5;" : "")">
+                        <td style="padding: 0.4rem;">@e.DateLabel</td>
+                        <td style="padding: 0.4rem;">@FormatTime(e.Time)</td>
+                        <td style="padding: 0.4rem">
+                            @e.Title
+                            @if (e.RequiresTickets)
+                            {
+                                <span style="color: var(--vp-red); font-weight: bold; margin-left:0.4rem;" title="Karten müssen bestellt werden">
+                                    [Karten]
+                                </span>
+                            }
+                        </td>
+                        <td style="padding: 0.4rem;">@(e.Location ?? "-")</td>
+                            <td style="padding: 0.4rem;">
+                                @string.Join(", ", e.EventDepartments.Select(ed => ed.Department.Name))
+                            </td>
+                            <td style="padding: 0.4rem;">
+                                @if (e.IsCompleted)
+                            {
+                                <span style="color: #666;">vorbei</span>
+                            }
+                            else
+                            {
+                                <span style="color: #0a0;">Anstehend</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+
+        <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+            @_events.Count Termin(e) angezeigt
+        </p>
+    }
+
+    @code {
+        private List<EventItem>? _events;
+        private List<Department> _departments = new();
+
+        // 0 = "alle"
+        private int _selectedDeptId;
+        private bool _includeCompleted;
+
+        protected override async Task OnInitializedAsync()
+        {
+            _departments = await DeptSvc.GetAllAsync();
+            await ReloadAsync();
+        }
+
+        private async Task ReloadAsync()
+        {
+            int? deptFilter = _selectedDeptId == 0 ? null : _selectedDeptId;
+            _events = await EventSvc.GetAllAsync(deptFilter, _includeCompleted);
+        }
+
+        private static string FormatTime(TimeSpan? t) => t.HasValue ? t.Value.ToString(@"\hh:mm") : "-";
+}
