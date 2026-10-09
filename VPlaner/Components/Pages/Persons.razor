@@ -1,0 +1,273 @@
+﻿@page "/persons"
+@using VPlaner.Core.Models
+@using VPlaner.Infrastructure.Services
+@inject PersonService PersonSvc
+@inject DepartmentService DeptSvc
+
+
+<PageTitle>Personen</PageTitle>
+
+<h1>Personen</h1>
+
+<!--Filter-->
+<div style="margin: 1rem 0;">
+    <label>
+        <input type="checkbox" @bind="_showInactive" @bind:after="ReloadAsync" />
+        Inaktive Personen anzeigen
+    </label>
+</div>
+
+<!--Formular zum Anlegen-->
+<div style="margin: 1rem 0; padding: 1rem; background: #f9f9f9; border-radius: 6px; max-width: 700px;">
+    <h3 style="margin-top: 0;">Neue Person anlegen</h3>
+
+    <div style="margin-bottom: 0.6rem;">
+        <input @bind="_newName" @bind:event="oninput" placeholder="Name" style="padding: 0.4rem; width: 100%; max-width: 300px;" />
+    </div>
+
+    <div style="margin-bottom: 0.6rem;">
+        <strong>Abteilungen</strong>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.4rem;">
+            @foreach (var d in _departments)
+            {
+                <label>
+                    <input type="checkbox" checked="@_newDeptIds.Contains(d.Id)" @onchange="e => ToggleNewDept(d.Id, (bool)e.Value!)" />
+                    @d.Name
+                </label>
+            }
+        </div>
+    </div>
+
+    <button @onclick="CreateAsync" disabled="@(string.IsNullOrWhiteSpace(_newName) || _newDeptIds.Count == 0)">
+        Anlegen
+    </button>
+</div>
+
+@if (!string.IsNullOrEmpty(_message))
+{
+    <div style="padding: 0.6rem; background: #e0f0ff; border-left: 4px solid #2563eb; margin: 1rem 0;">
+        @_message
+    </div>
+}
+
+@if (!string.IsNullOrEmpty(_error))
+{
+    <div style="padding: 0.6rem; background: #ffe0e0; border-left: 4px solid #dc2626; margin: 1rem 0;">
+        @_error
+    </div>
+}
+
+<!--Liste-->
+@if (_persons == null)
+{
+    <p>Lade Daten_</p>
+}
+else if (_persons.Count == 0)
+{
+    <p>Keine Person vorhanden.</p>
+}
+else
+{
+    <table style="width: 100%; max-width: 900px; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="text-align: left; padding: 0.4rem;">ID</th>
+                <th style="text-align: left; padding: 0.4rem;">Name</th>
+                <th style="text-align: left; padding: 0.4rem;">Abteilungen</th>
+                <th style="text-align: left; padding: 0.4rem;">Status</th>
+                <th style="text-align: left; padding: 0.4rem;">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in _persons)
+            {
+                <tr style="border-bottom: 1px solid #eee; @(p.IsActive ? "" : "opacity: 0.5;")">
+                    <td style="padding: 0.4rem;">@p.Id</td>
+                    <td style="padding: 0.4rem;">
+                        @if (_editingId == p.Id)
+                        {
+                            <input @bind="_editName" style="padding: 0.3rem;" />
+                        }
+                        else
+                        {
+                            @p.Name
+                        }
+                    </td>
+                    <td style="padding: 0.4rem;">
+                        @if (_editingId == p.Id)
+                        {
+                                    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                        @foreach (var d in _departments)
+                                        {
+                                            <label>
+                                                <input type="checkbox" checked="@_editDeptIds.Contains(d.Id)" @onchange="e => ToggleEditDept(d.Id, (bool)e.Value!)" />
+                                                @d.Name
+                                            </label>
+                                        }
+                                    </div>
+                                }
+                                else
+                                    {
+                            @string.Join(", ", p.PersonDepartments.Select(pd => pd.Department.Name));
+                        }
+                            </td>
+                            <td style="padding: 0.4rem;">
+                                @(p.IsActive ? "aktiv" : "inaktiv")
+                            </td>
+                            <td style="padding: 0.4rem;">
+                                @if (_editingId == p.Id)
+                                {
+                                    <button @onclick="() => SaveAsync(p.Id)">Speichern</button>
+                                    <button @onclick="CancelEdit">Abbrechen</button>
+                                }
+                                else
+                                {
+                                    <button @onclick="() => StartEdit(p)">Bearbeiten</button>
+                                    @if (p.IsActive)
+                                    {
+                                        <button @onclick="() => DeactivateAsync(p.Id)" style="background: #fee; color: #c00;">Deaktivieren</button>
+                                    }
+                                    else
+                                    {
+                                        <button @onclick="() => ReactivateAsync(p.Id)">Reaktivieren</button>
+                                    }
+                                }
+                            </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Person>? _persons;
+    private List<Department> _departments = new();
+
+    //Formular neue Person
+    private string _newName = string.Empty;
+    private HashSet<int> _newDeptIds = new();
+
+    //Edit-State
+    private int _editingId;
+    private string _editName = string.Empty;
+    private HashSet<int> _editDeptIds = new();
+
+    //Filter
+    private bool _showInactive;
+
+    private string _message = string.Empty;
+    private string _error = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _departments = await DeptSvc.GetAllAsync();
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        _persons = await PersonSvc.GetAllAsync(includeInactive: _showInactive);
+    }
+
+    private void ToggleNewDept(int deptId, bool isChecked)
+    {
+        if (isChecked) _newDeptIds.Add(deptId);
+        else _newDeptIds.Remove(deptId);
+    }
+
+    private async Task CreateAsync()
+    {
+        _message = string.Empty;
+        _error = string.Empty;
+
+        try
+        {
+            var p = await PersonSvc.CreateAsync(_newName, _newDeptIds);
+            _message = $"Person '{p.Name}' angelegt.";
+            _newName = string.Empty;
+            _newDeptIds.Clear();
+            await ReloadAsync();
+        }
+        catch (PersonServiceException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private void StartEdit(Person p)
+    {
+        _editingId = p.Id;
+        _editName = p.Name;
+        _editDeptIds = p.PersonDepartments.Select(pd => pd.DepartmentId).ToHashSet();
+        _message = string.Empty;
+        _error = string.Empty;
+    }
+
+    private void ToggleEditDept(int deptId, bool isChecked)
+    {
+        if (isChecked) _editDeptIds.Add(deptId);
+        else _editDeptIds.Remove(deptId);
+    }
+
+    private void CancelEdit()
+    {
+        _editingId = 0;
+        _editName = string.Empty;
+        _editDeptIds.Clear();
+    }
+
+    private async Task SaveAsync(int id)
+    {
+        _message = string.Empty;
+        _error = string.Empty;
+
+        try
+        {
+            await PersonSvc.RenameAsync(id, _editName);
+            await PersonSvc.UpdateDepartmentsAsync(id, _editDeptIds);
+            _message = "Person aktualisiert";
+            _editingId = 0;
+            await ReloadAsync();
+        }
+        catch (PersonServiceException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task DeactivateAsync(int id)
+    {
+        _message = string.Empty;
+        _error = string.Empty;
+
+        try
+        {
+            await PersonSvc.DeactivateAsync(id);
+            _message = "Person deaktiviert";
+            await ReloadAsync();
+        }
+        catch (PersonServiceException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task ReactivateAsync(int id)
+    {
+        _message = string.Empty;
+        _error = string.Empty;
+        try
+        {
+            await PersonSvc.ReactivateAsync(id);
+            _message = "Person reaktiviert.";
+            await ReloadAsync();
+        }
+        catch (PersonServiceException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+}
+
+
+    

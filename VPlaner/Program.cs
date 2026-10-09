@@ -1,6 +1,7 @@
 using VPlaner.Components;
 using VPlaner.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
+using VPlaner.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,6 +13,9 @@ builder.Services.AddRazorComponents()
 var connectionString = builder.Configuration.GetConnectionString("Default") 
                        ?? "Data Source=vplaner.db";
 builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionString));
+
+builder.Services.AddScoped<DepartmentService>();
+builder.Services.AddScoped<PersonService>();
 
 var app = builder.Build();
 

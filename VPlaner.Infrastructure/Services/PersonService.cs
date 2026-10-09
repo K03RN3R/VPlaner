@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using VPlaner.Core.Models;
 using VPlaner.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using VPlaner.Infrastructure.Data;
 using System.Security.Cryptography.X509Certificates;
+
 
 namespace VPlaner.Infrastructure.Services
 {
@@ -28,10 +30,10 @@ namespace VPlaner.Infrastructure.Services
             {
                 var q = _db.Persons
                         .Include(p => p.PersonDepartments)
-                                .ThenInclude(pd => pd.Department);
-                                AsQueryable();
-                if (!includeInactive)
-                    q = q.Where(p => p.IsActive);
+                                .ThenInclude(pd => pd.Department)
+                                .AsQueryable();
+            if (!includeInactive)
+                q = q.Where(p => p.IsActive);
                 return q.OrderBy(p => p.Id).ToListAsync();
             }
 
@@ -92,7 +94,7 @@ namespace VPlaner.Infrastructure.Services
         ///Setzt die Abteilkungs-Zurodnung einer Person neu
         ///Zuordnungen die nicht in Liste, werden entfernt; neue hinzugefügt
         ///</summary>
-        public async Task UpdateDepartmentAsync(int personId, IEnumerable<int> departmentIds)
+        public async Task UpdateDepartmentsAsync(int personId, IEnumerable<int> departmentIds)
         {
             var deptIds = departmentIds.Distinct().ToList();
             if (deptIds.Count == 0) throw new PersonServiceException("Mindestens eine Abteilung muss zugeordnet sein.");
@@ -142,10 +144,9 @@ namespace VPlaner.Infrastructure.Services
             person.IsActive = true;
             await _db.SaveChangesAsync();
         }
-
-        public class PersonServiceException : Exception
-        {
-            public PersonServiceException(string message) : base(message) { }
-        }
+    }
+    public class PersonServiceException : Exception
+    {
+        public PersonServiceException(string message) : base(message) { }
     }
 }
