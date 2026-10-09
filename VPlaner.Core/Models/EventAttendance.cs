@@ -18,7 +18,7 @@ namespace VPlaner.Core.Models
         public Person Person { get; set; } = null!;
 
         public EventItem Event { get; set; } = null!;
-        public AttendenceStatus Status { get; set; } = AttendenceStatus.Ausstehend;
+        public AttendanceStatus Status { get; set; } = AttendanceStatus.Ausstehend;
 
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 

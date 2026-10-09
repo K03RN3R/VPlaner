@@ -1,0 +1,160 @@
+﻿@page "/events/{EventId:int}/attendance"
+@using VPlaner.Core.Models
+@using VPlaner.Infrastructure.Services
+@inject EventService EventSvc
+@inject AttendanceService AttendanceSvc
+@inject NavigationManager Nav
+
+
+<PageTitle>Anwesenheit</PageTitle>
+
+<div style="margin-bottom: 1rem;">
+    <a href="/events" style="color: var(--vp-red); text-decoration: none">
+        ← Zurück zur Terminübersicht
+    </a>
+</div>
+
+@if (_event == null)
+{
+    <p>Lade Termin...</p>
+}
+else
+{
+    <h1>Anwesenheit: @_event.Title</h1>
+
+    <div style="margin: 0.5rem 0 1.5rem; color: #666;">
+        <strong>@_event.DateLabel</strong>
+        @if (_event.Time.HasValue)
+        {
+            <span> &nbsp; ·&nbsp; @FormatTime(_event.Time)</span>
+        }
+        @if (!string.IsNullOrEmpty(_event.Location))
+        {
+            <span> &nbsp; ·&nbsp; @_event.Location</span>
+        }
+    </div>
+
+    @if (_event.IsCompleted)
+    {
+        <div style="padding: 0.6rem; background: #f3f3f3; border-left: 4px solid #999; margin: 1rem 0;">
+            Termin ist vorbei - Statusänderungen nicht mehr möglich!
+        </div>
+    }
+
+    @if (_rows == null)
+    {
+        <p>Lade Person...</p>
+    }
+    else if (_rows.Count == 0)
+    {
+        <p>Keine Person in der zugeordneten Abteilung gefunden.</p>
+    }
+    else
+    {
+        <table style="width: 100%; max-width: 1000px; border-collapse: collapse">
+            <thead>
+                <tr>
+                    <th style="text-align: left; padding: 0.4rem">Person</th>
+                    <th style="text-align: left; padding: 0.4rem">Abteilung</th>
+                    <th style="text-align: left; padding: 0.4rem">Status</th>
+                    <th style="text-align: left; padding: 0.4rem">Zuletzt geändert</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in _rows)
+                {
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 0.4rem">@row.PersonName</td>
+                        <td style="padding: 0.4rem; color: #666; font-size: 0.9em;">
+                            @string.Join(", ", row.Departments)
+                        </td>
+                        <td style="padding: 0.4rem;">
+                            <select value="@row.Status"
+                            @onchange="e => SetStatusAsync(row.PersonId, e.Value?.ToString() ?? string.Empty)"
+                            disabled="@_event.IsCompleted"
+                            style="padding: 0.3rem;">
+                            @foreach (var status in Enum.GetValues<AttendanceStatus>())
+                                {
+                                    <option value="@status">@status</option>
+                                }
+                            </select>
+                            <span style="margin-left: 0.5rem;">
+                                @StatusBadge(row.Status)
+                            </span>
+                        </td>
+                        <td style="padding: 0.4rem; color: #666; font-size: 0.85em;">
+                            @if (row.UpdatedAt.HasValue)
+                            {
+                                @row.UpdatedAt.Value.ToLocalTime().ToString("dd.MM.yyyy HH:mm")
+                                @(" von ")
+                                @(row.UpdatedBy ?? "unbekannt")
+                            }
+                            else
+                            {
+                                <span>-</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p style="margin-top: 1rem; color: #666; font-size: 0.9em;">
+            @_rows.Count Personen ·
+            @_rows.Count(r => r.Status == AttendanceStatus.Zusage) Zusagen  ·
+            @_rows.Count(r => r.Status == AttendanceStatus.Absage) Absagen  ·
+            @_rows.Count(r => r.Status == AttendanceStatus.Ausstehend) Ausstehend  ·
+        </p>
+    }
+}
+
+@code {
+    [Parameter] public int EventId { get; set; }
+
+    private EventItem? _event;
+    private List<AttendanceRow>? _rows;
+
+    //Platzhalter - wird in Schritt 14 durch eingeloggten User ersetz
+    private const string CurrentUser = "demo";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _event = await EventSvc.GetAsync(EventId);
+        if (_event == null)
+        {
+            Nav.NavigateTo("/events");
+            return;
+        }
+        _rows = await AttendanceSvc.GetForEventAsync(EventId);
+    }
+
+    private async Task SetStatusAsync(int personId, string statusString)
+    {
+        if (_event == null || _event.IsCompleted) return;
+        if (!Enum.TryParse<AttendanceStatus>(statusString, out var newStatus)) return;
+
+        await AttendanceSvc.SetStatusAsync(EventId, personId, newStatus, CurrentUser);
+
+        //Lokale Daten aktualisieren, damit Tabelle gleich frisch bleibt
+        var row = _rows?.FirstOrDefault(r => r.PersonId == personId);
+        if (row != null)
+        {
+            row.Status = newStatus;
+            row.UpdatedAt = DateTime.UtcNow;
+            row.UpdatedBy = CurrentUser;
+        }
+    }
+
+    private static string FormatTime(TimeSpan? t) => t.HasValue ? t.Value.ToString(@"hh\:mm") : "-";
+
+    private static MarkupString StatusBadge(AttendanceStatus status)
+    {
+        var (color, label) = status switch
+        {
+            AttendanceStatus.Zusage => ("#0a0", "✓"),
+            AttendanceStatus.Absage => ("#c00", "✗"),
+            _ => ("#999", "?")
+        };
+        return new MarkupString($"<span style=\"color: {color}; font-weight: bold;\">{label}</span>");
+    }
+}
