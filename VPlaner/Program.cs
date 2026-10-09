@@ -17,6 +17,7 @@ builder.Services.AddDbContext<AppDbContext>(opt => opt.UseSqlite(connectionStrin
 builder.Services.AddScoped<DepartmentService>();
 builder.Services.AddScoped<PersonService>();
 builder.Services.AddScoped<EventService>();
+builder.Services.AddScoped<AttendanceService>();
 
 var app = builder.Build();
 

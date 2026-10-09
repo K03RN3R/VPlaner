@@ -4,7 +4,7 @@ using System.Text;
 
 namespace VPlaner.Core.Models
 {
-    public enum AttendenceStatus
+    public enum AttendanceStatus
     {
         Ausstehend = 0,
         Zusage = 1,
